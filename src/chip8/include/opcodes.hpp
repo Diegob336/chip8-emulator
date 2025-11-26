@@ -1,16 +1,7 @@
 #include <stdint.h>
 #include <iostream>
 
-class opcode{
-public:
-    void add();
-    void set();
-    void setI();
-    void clear();
-    void jump();
-    void display();
-    void decode();
-
+typedef struct {
     uint8_t nib_1;
     uint8_t nib_2;
     uint8_t nib_3;
@@ -18,4 +9,4 @@ public:
     uint8_t sec_byte;
     uint16_t addr;
     uint16_t full_op;
-};
+}opcode;

@@ -1,7 +1,8 @@
-#include <iostream>
 #include <stdint.h>
+#include "cpu.hpp"
 
 int main(){
-	uint16_t hi;
-    
+   
+    cpu chip8;
+    chip8.op_display();
 }

@@ -6,11 +6,14 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 add_subdirectory(src/chip8)
 
+find_package(SDL2 REQUIRED)
+
 add_executable(chip8 
     src/main.cpp
 )
-
-target_link_libraries(chip8 PRIVATE chip8-core)
+target_include_directories(chip8 PRIVATE ${SDL2_INCLUDE_DIRS})
+ 
+target_link_libraries(chip8 PRIVATE chip8-core ${SDL2_LIBRARIES})
 
 
 
