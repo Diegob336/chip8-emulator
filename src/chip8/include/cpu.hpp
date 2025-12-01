@@ -18,6 +18,8 @@ public:
         sound_timer{},
         display{}
     {
+        SDL_Init(SDL_INIT_EVERYTHING);
+        createWindow(win, winSurface);
     }
 
     void cycle();
@@ -37,7 +39,9 @@ private:
     opcode op;
     uint8_t delay_timer;
     uint8_t sound_timer;
-    uint8_t display[GRID_SIZE];
+    uint8_t display[64][32];
+    SDL_Window *win;
+    SDL_Surface *winSurface;
 };
 
 

@@ -60,8 +60,10 @@ void cpu::op_setI(){
 }
 
 void cpu::op_clear(){
-    for (int i =0; i < GRID_SIZE; i++) {
-        display[i] = 0;
+    for (int i =0; i < 64; i++) {
+        for (int j = 0; j < 32; j ++){
+            display[i][j] = 0;
+        }
     }
 }
 
@@ -70,5 +72,22 @@ void cpu::op_jump(){
 }
 
 void cpu::op_display(){
-    createWindow();
+    uint8_t x = op.nib_2;
+    uint8_t y = op.nib_3;
+
+    for (int n = 0; n < op.nib_4; n++) {
+        uint8_t temp = memory[I + n];
+        for (int c = 0; c < 8; c ++){
+            uint8_t val = (temp >> (7 - c)) & 1;
+            display[y + n][x + c] ^= val;
+            if (display[y +n][x+c] == 0){
+                V[15] = 1;
+            }
+        }
+    }
+    
+    
+
+    draw(win, winSurface, display);  
+
 }
