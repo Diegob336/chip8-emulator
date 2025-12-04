@@ -1,5 +1,24 @@
 #include "cpu.hpp"
 
+int cpu::load_rom(const std::string& file_path, int size){
+    std::ifstream file(file_path, std::ios::binary);
+
+    if (!file){
+        std::cout << "could not open file";
+        return -1;
+    }
+    if (size > (4096 - 0x200)){
+        std::cout << "program is too large for chip8";
+        return -1;
+    }
+
+    file.read(reinterpret_cast<char*>(&memory[0x200]), size);
+    printf("%02X\n",((memory[0x228] << 8) | memory[0x229]));
+
+    return 1;
+
+}
+
 void cpu:: cycle(){
 
     op.full_op = memory[pc] << 8 | memory[pc + 1];
@@ -16,6 +35,8 @@ void cpu:: decode(){
     op.sec_byte = op.full_op & 0x00FF;
     op.addr = op.full_op & 0x0FFF;
 
+//    std::cout << std::hex << op.nib_1 << " "; 
+    printf("%02X\n", op.full_op);
     switch(op.nib_1){
         case 0x0:
             op_clear();
@@ -41,14 +62,7 @@ void cpu:: decode(){
     }
 }
 void cpu::op_add(){
-    uint8_t prev = op.nib_2;
-    V[op.nib_2] += V[op.nib_3];
-    if(V[op.nib_2] < prev) {
-        V[15] = 1;
-    }
-    else {
-        V[15] = 0;
-    }
+    V[op.nib_2] += op.sec_byte;
 }
 
 void cpu::op_set(){
@@ -60,34 +74,40 @@ void cpu::op_setI(){
 }
 
 void cpu::op_clear(){
-    for (int i =0; i < 64; i++) {
-        for (int j = 0; j < 32; j ++){
+    for (int i = 0; i < 32; i++) {
+        for (int j = 0; j < 64; j ++){
             display[i][j] = 0;
         }
     }
+    draw(win, winSurface, display);
 }
 
 void cpu::op_jump(){
     pc = op.addr;
+    printf("%02X\n", op.addr);
 }
 
 void cpu::op_display(){
-    uint8_t x = op.nib_2;
-    uint8_t y = op.nib_3;
+    uint8_t x = V[op.nib_2];
+    uint8_t y = V[op.nib_3];
 
-    for (int n = 0; n < op.nib_4; n++) {
-        uint8_t temp = memory[I + n];
+    for (int i = 0; i < op.nib_4; i++) {
+        uint8_t temp = memory[I + i];
         for (int c = 0; c < 8; c ++){
             uint8_t val = (temp >> (7 - c)) & 1;
-            display[y + n][x + c] ^= val;
-            if (display[y +n][x+c] == 0){
-                V[15] = 1;
-            }
-        }
+            display[(y + i) % 32][(x + c) % 64] ^= val;
+        } 
     }
-    
-    
 
     draw(win, winSurface, display);  
 
 }
+
+void cpu::print(){
+    for (int i = 0; i < 132; i++){
+        uint16_t opcode = (memory[0x200 +i] << 8) | memory[0x201 + i];
+        printf("%02X\n", opcode);
+        i++;
+    }
+}
+

@@ -1,5 +1,7 @@
 #include <stdint.h>
 #include <stack>
+#include <fstream>
+#include <filesystem>
 #include "opcodes.hpp"
 #include "graphics.hpp"
 
@@ -22,6 +24,7 @@ public:
         createWindow(win, winSurface);
     }
 
+    int load_rom(const std::string& file_path, int size);
     void cycle();
     void decode();
     void op_add();
@@ -30,6 +33,7 @@ public:
     void op_clear();
     void op_jump();
     void op_display();
+    void print();
 private:
     uint8_t memory[4096];
     std::stack<uint16_t> stack;
@@ -39,7 +43,7 @@ private:
     opcode op;
     uint8_t delay_timer;
     uint8_t sound_timer;
-    uint8_t display[64][32];
+    uint8_t display[32][64];
     SDL_Window *win;
     SDL_Surface *winSurface;
 };

@@ -3,4 +3,4 @@
 #include <unistd.h>
 
 void createWindow(SDL_Window *&win, SDL_Surface *&winSurface);
-void draw(SDL_Window *win, SDL_Surface *winSurface, uint8_t display[64][32]); 
+void draw(SDL_Window *win, SDL_Surface *winSurface, uint8_t display[32][64]); 
