@@ -2,7 +2,7 @@
 
 void createWindow(SDL_Window *&win, SDL_Surface *&winSurface){
 
-    win = SDL_CreateWindow("Window", 100, 100, 64, 32, SDL_WINDOW_RESIZABLE);
+    win = SDL_CreateWindow("Window", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 64, 32, SDL_WINDOW_RESIZABLE);
     if (!win){
         std::cout << "failed to create window: " << SDL_GetError() << std::endl; 
     }

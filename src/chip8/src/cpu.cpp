@@ -19,6 +19,12 @@ int cpu::load_rom(const std::string& file_path, int size){
 
 }
 
+void cpu::load_fonts(){
+    for (int i = 0 ; i < FONT_SIZE; i++){
+        memory[FONT_ADDR + i] = Fonts[i];
+    }
+}
+
 void cpu:: cycle(){
 
     op.full_op = memory[pc] << 8 | memory[pc + 1];
@@ -27,7 +33,7 @@ void cpu:: cycle(){
 }
 
 void cpu:: decode(){
-// TODO: implement decode funciton
+
     op.nib_1 = op.full_op >> 12;
     op.nib_2 = (op.full_op >> 8) & 0x0F;
     op.nib_3 = (op.full_op >> 4) & 0x0F;
@@ -39,10 +45,35 @@ void cpu:: decode(){
     printf("%02X\n", op.full_op);
     switch(op.nib_1){
         case 0x0:
-            op_clear();
+            if (op.nib_4){
+                op_sub_return();
+            } else {
+                op_clear();
+            }
             break;
         case 0x1:
             op_jump();
+            break;
+        case 0x2:
+            op_sub_call();
+            break;
+        case 0x3:
+            if (V[op.nib_2] == op.sec_byte){
+                pc += 2;
+            }
+            break;
+        case 0x4:
+            if (V[op.nib_2] != op.sec_byte){
+                pc += 2;
+            }
+            break;
+        case 0x5:
+            if (op.nib_4 != 0){
+                std::cout << "invalid opcode, last nibble is: " << op.nib_4 << '\n';
+            }
+            if (V[op.nib_2] == V[op.nib_3]){
+                pc += 2;
+            }
             break;
         case 0x6:
             op_set();
@@ -50,13 +81,150 @@ void cpu:: decode(){
         case 0x7:
              op_add();
             break;
+        case 0x8:
+            switch(op.nib_4){
+                case 0x0:
+                    V[op.nib_2] = V[op.nib_3];
+                    break;
+                case 0x1: 
+                    V[op.nib_2] |= V[op.nib_3];
+                    break;
+                case 0x2:
+                    V[op.nib_2] &= V[op.nib_3];
+                    break;
+                case 0x3:
+                    V[op.nib_2] ^= V[op.nib_3];
+                    break;
+                case 0x4:{
+                    uint8_t temp = V[op.nib_2];
+                    V[op.nib_2] += V[op.nib_3];
+                    if(V[op.nib_2] < temp){
+                        V[0xF] = 1;
+                    }
+                    else {
+                        V[0xF] = 0;
+                    }
+                    break;
+                }
+                case 0x5:{
+
+                    if (V[op.nib_2] >= V[op.nib_3]){
+                        V[0xF] = 1;
+                    }
+                    else {
+                        V[0xF] = 0;
+                    }
+                    V[op.nib_2] -= V[op.nib_3];
+                    break;
+                }
+                case 0x6:
+                    V[0xF] = V[op.nib_2] & 1;
+                    V[op.nib_2] >>= 1;
+                    break;
+                case 0x7:
+                    if (V[op.nib_3] >= V[op.nib_2]){
+                        V[0xF] = 1;
+                    }
+                    else {
+                        V[0xF] = 0;
+                    }
+                    V[op.nib_2] = V[op.nib_3] - V[op.nib_2];
+                    break;
+                case 0xE:
+                    if ((V[op.nib_2] >> 7) & 1){
+                        V[0xF] = 1;
+                    }
+                    else {
+                        V[0xF] = 0;
+                    }
+                    V[op.nib_2] <<= 1;
+                    break;
+                default:
+                    std::cout << "recevied invlaid command, fourth nibble is: " << op.nib_4;
+
+            }
+
+            break;
+        case 0x9:
+            if (op.nib_4 != 0){
+                std::cout << "invalid opcode, last nibble is: " << op.nib_4 << '\n';
+            }
+
+            if (V[op.nib_2] != V[op.nib_3]){
+                pc +=2;
+            }
+
+            break;
         case 0xA:
             op_setI();
+            break;
+        case 0xB:
+            pc = V[0] + op.addr;
+            break;
+        case 0xC:
+            V[op.nib_2] = rand() & op.sec_byte;
             break;
         case 0xD:
             op_display();
             break;
-        default:
+        case 0xE:
+            if (op.nib_3 == 0x9){
+
+                std::cout << "opcode unimplemented";
+            }
+            else {
+
+                std::cout << "opcode unimplemented";
+            }
+            break;
+        case 0xF:
+            switch(op.nib_4){
+                case 0x3:{
+
+                    uint8_t temp = V[op.nib_2];
+                    for (int i = 2; i >= 0; i--){
+                        memory[I + i] = temp % 10; 
+                        temp /= 10;
+                    }
+
+                    break;
+                }
+                case 0x5: 
+                    switch(op.nib_3){
+
+                        case 0x1:
+                            delay_timer = V[op.nib_2];
+                            break;
+                        case 0x5:
+                            for (int i = 0; i <= op.nib_2; i++){
+                                memory[I + i] = V[i];
+                            }
+                            break;
+                        case 0x6:
+                            for (int i = 0; i <= op.nib_2; i++){
+                                V[i] = memory[I + i];
+                            }
+                    }
+
+                    break;
+                case 0x7: 
+                    V[op.nib_2] = delay_timer;
+                    break;
+                case 0x8:
+                    sound_timer = V[op.nib_2];
+                    break;
+                case 0x9:
+                    I = FONT_ADDR + (V[op.nib_2] * 5);
+                    break;
+                case 0xA:
+                    std::cout << "opcode unimplemented";
+                    break;
+                case 0xE:
+                    I += V[op.nib_2];
+                    break;
+            }
+            break;
+
         std::cout << "received unimplemented opcode: " << op.nib_1 << '\n';  
 
     }
@@ -90,18 +258,47 @@ void cpu::op_jump(){
 void cpu::op_display(){
     uint8_t x = V[op.nib_2];
     uint8_t y = V[op.nib_3];
+    V[0xF] = 0;
 
     for (int i = 0; i < op.nib_4; i++) {
         uint8_t temp = memory[I + i];
         for (int c = 0; c < 8; c ++){
+            uint8_t prev = display[(y + i) % 32][(x + c) % 64]; 
             uint8_t val = (temp >> (7 - c)) & 1;
             display[(y + i) % 32][(x + c) % 64] ^= val;
+            if (prev == 1 && val == 1){
+                V[0xF] = 1;
+            }
         } 
     }
 
     draw(win, winSurface, display);  
 
 }
+
+void cpu::op_sub_call(){
+
+    std::cout << "opcode unimplemented";
+}
+
+void cpu::op_sub_return(){
+
+    std::cout << "opcode unimplemented";
+}
+
+
+void cpu::timer(){
+    if (delay_timer > 0){
+
+        delay_timer--;
+    }
+    if (sound_timer > 0){
+
+        sound_timer--; 
+
+    }
+}
+
 
 void cpu::print(){
     for (int i = 0; i < 132; i++){
