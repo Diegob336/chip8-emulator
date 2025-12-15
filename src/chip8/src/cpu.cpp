@@ -42,7 +42,7 @@ void cpu:: decode(){
     op.addr = op.full_op & 0x0FFF;
 
 //    std::cout << std::hex << op.nib_1 << " "; 
-    printf("%02X\n", op.full_op);
+//    printf("%02X\n", op.full_op);
     switch(op.nib_1){
         case 0x0:
             if (op.nib_4){
@@ -168,13 +168,27 @@ void cpu:: decode(){
             op_display();
             break;
         case 0xE:
-            if (op.nib_3 == 0x9){
+            if (op.nib_3 == 0x9 && op.nib_4 == 0xE){
+                if (V[op.nib_2] < 16){
+                    if (keys[V[op.nib_2]]){
+                        pc += 2;
+                    }
 
-                std::cout << "opcode unimplemented";
+                }
+                else {
+                    std::cout << "Vx is too large ";
+                }
             }
-            else {
+            else if (op.nib_3 == 0xA && op.nib_4 == 0x1){
+                if (V[op.nib_2] < 16){
+                    if (!keys[V[op.nib_2]]){
+                        pc += 2;
+                    }
 
-                std::cout << "opcode unimplemented";
+                }
+                else {
+                    std::cout << "Vx is too large ";
+                }
             }
             break;
         case 0xF:
@@ -216,17 +230,28 @@ void cpu:: decode(){
                 case 0x9:
                     I = FONT_ADDR + (V[op.nib_2] * 5);
                     break;
-                case 0xA:
-                    std::cout << "opcode unimplemented";
+                case 0xA: {
+                    uint8_t pressed{};
+                    for (int i = 0; i < 16; i ++){
+                        if (keys[i]){
+                            pressed = 1;
+                            V[op.nib_2] = i;
+                        }
+                    }
+                    if (!pressed){
+                        pc -= 2;
+                    }
                     break;
+
+                }
                 case 0xE:
                     I += V[op.nib_2];
                     break;
             }
             break;
 
-        std::cout << "received unimplemented opcode: " << op.nib_1 << '\n';  
-
+        default:
+            std::cout << "received invalid opcode: " << op.nib_1 << '\n';  
     }
 }
 void cpu::op_add(){
@@ -252,7 +277,6 @@ void cpu::op_clear(){
 
 void cpu::op_jump(){
     pc = op.addr;
-    printf("%02X\n", op.addr);
 }
 
 void cpu::op_display(){
@@ -278,12 +302,22 @@ void cpu::op_display(){
 
 void cpu::op_sub_call(){
 
-    std::cout << "opcode unimplemented";
+    if (sp >= 16){
+        std::cout << "stack overflow";
+        return;
+    }
+    stack[sp] = pc;
+    pc = op.addr;
+    sp ++;
 }
 
 void cpu::op_sub_return(){
-
-    std::cout << "opcode unimplemented";
+    if (sp <= 0){
+        std::cout << "nothing in stack";
+        return;
+    }
+    pc = stack[sp - 1];
+    sp --;
 }
 
 

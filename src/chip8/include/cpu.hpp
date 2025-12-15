@@ -9,6 +9,7 @@
 #include "graphics.hpp"
 #include <chrono>
 #include <thread>
+#include "keyboard.hpp"
 
 constexpr int GRID_SIZE = 64 * 32;
 constexpr int FONT_SIZE = 80;
@@ -70,8 +71,8 @@ public:
     void print();
 private:
     uint8_t memory[4096];
-    uint8_t stack[16];
-    uint16_t sp;
+    uint16_t stack[8];
+    uint8_t sp;
     uint16_t pc;
     uint16_t I;
     uint8_t V[16];
